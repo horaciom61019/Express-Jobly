@@ -44,7 +44,12 @@ class Company {
     return company;
   }
 
-  /** Find all companies.
+  /** Find all companies (optional filter on searchFilters).
+   *
+   * searchFilters (all optional):
+   * - minEmployees
+   * - maxEmployees
+   * - name (will find case-insensitive, partial matches)
    *
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
@@ -97,7 +102,7 @@ class Company {
   /** Given a company handle, return data about company.
    *
    * Returns { handle, name, description, numEmployees, logoUrl, jobs }
-   *   where jobs is [{ id, title, salary, equity, companyHandle }, ...]
+   *   where jobs is [{ id, title, salary, equity }, ...]
    *
    * Throws NotFoundError if not found.
    **/
@@ -116,6 +121,16 @@ class Company {
     const company = companyRes.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
+
+    const jobsRes = await db.query(
+          `SELECT id, title, salary, equity
+           FROM jobs
+           WHERE company_handle = $1
+           ORDER BY id`,
+        [handle],
+    );
+
+    company.jobs = jobsRes.rows;
 
     return company;
   }
